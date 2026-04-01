@@ -60,6 +60,12 @@ async function spotifyRequest(session, method, path, data = null, params = {}) {
       const res = await axios(config);
       return res.data;
     }
+    if (err.response?.status === 429) {
+      const retryAfter = parseInt(err.response.headers['retry-after'] || '2', 10);
+      await new Promise(r => setTimeout(r, (retryAfter + 1) * 1000));
+      const res = await axios(config);
+      return res.data;
+    }
     throw err;
   }
 }

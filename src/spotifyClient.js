@@ -102,6 +102,7 @@ async function getPlaylists(session) {
     .map((p) => ({
       id: p.id,
       name: p.name,
+      snapshotId: p.snapshot_id,
       trackCount: p.tracks?.total ?? p.items?.total ?? 0,
       imageUrl: p.images?.[0]?.url || null,
       public: p.public,

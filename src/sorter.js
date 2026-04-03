@@ -84,7 +84,7 @@ async function sortPlaylist(session, playlistId, onProgress) {
     await sleep(MOVE_DELAY_MS);
   }
 
-  onProgress({ type: 'status', message: `Done. Moved ${moveCount} of ${desired.length} tracks.` });
+  onProgress({ type: 'status', message: `Done. Moved ${moveCount} of ${desired.length} tracks.`, snapshotId });
 }
 
 module.exports = { sortPlaylist };

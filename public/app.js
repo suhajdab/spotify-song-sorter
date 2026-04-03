@@ -1,7 +1,19 @@
 // ── State ──────────────────────────────────────────────────────────────────────
 const selected = new Set();
 const sorted = new Set();
+const modified = new Set(); // previously sorted but changed since
 let allPlaylists = [];
+
+// ── localStorage helpers ───────────────────────────────────────────────────────
+const STORAGE_KEY = 'spotify-sorter-snapshots';
+function loadSnapshots() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch { return {}; }
+}
+function saveSnapshot(id, snapshotId) {
+  const snapshots = loadSnapshots();
+  snapshots[id] = snapshotId;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshots));
+}
 
 // ── Boot ───────────────────────────────────────────────────────────────────────
 (async function init() {
@@ -35,6 +47,13 @@ async function loadPlaylists() {
       return;
     }
 
+    const snapshots = loadSnapshots();
+    for (const pl of allPlaylists) {
+      if (!pl.snapshotId || !snapshots[pl.id]) continue;
+      if (snapshots[pl.id] === pl.snapshotId) sorted.add(pl.id);
+      else modified.add(pl.id);
+    }
+
     renderGrid();
   } catch (err) {
     grid.innerHTML = `<div class="state-message">Error: ${err.message}</div>`;
@@ -47,7 +66,10 @@ function renderGrid() {
 
   for (const pl of allPlaylists) {
     const card = document.createElement('div');
-    card.className = 'playlist-card' + (selected.has(pl.id) ? ' selected' : '') + (sorted.has(pl.id) ? ' sorted' : '');
+    card.className = 'playlist-card' +
+      (selected.has(pl.id)  ? ' selected'  : '') +
+      (sorted.has(pl.id)    ? ' sorted'    : '') +
+      (modified.has(pl.id)  ? ' modified'  : '');
     card.dataset.id = pl.id;
     card.onclick = () => toggleSelect(pl.id);
 
@@ -64,6 +86,7 @@ function renderGrid() {
           <polyline points="20 6 9 17 4 12"/>
         </svg>
       </div>
+      <div class="modified-badge" title="Modified since last sort">⚠️</div>
       <div class="sorted-badge">
         <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="20 6 9 17 4 12"/>
@@ -98,6 +121,7 @@ function deselectAll() {
 function markSorted(id) {
   sorted.add(id);
   selected.delete(id);
+  modified.delete(id);
   updateSelectionUI();
 }
 
@@ -106,6 +130,7 @@ function updateSelectionUI() {
   for (const card of document.querySelectorAll('.playlist-card')) {
     card.classList.toggle('selected', selected.has(card.dataset.id));
     card.classList.toggle('sorted', sorted.has(card.dataset.id));
+    card.classList.toggle('modified', modified.has(card.dataset.id));
   }
 
   // Update count label and sort button
@@ -209,6 +234,8 @@ function handleSSEEvent(id, event) {
       if (event.message.startsWith('Done')) {
         setIcon(id, '✅');
         setBar(id, 100);
+        const snapshotId = event.snapshotId || allPlaylists.find(p => p.id === id)?.snapshotId;
+        if (snapshotId) saveSnapshot(id, snapshotId);
         markSorted(id);
       }
       break;

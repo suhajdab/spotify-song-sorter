@@ -20,10 +20,15 @@ async function loadPlaylists() {
   grid.innerHTML = '<div class="state-message"><div class="spinner"></div>Loading your playlists…</div>';
 
   try {
-    allPlaylists = await fetch('/api/playlists').then(r => {
-      if (!r.ok) throw new Error('Failed to load playlists');
-      return r.json();
-    });
+    const playlistRes = await fetch('/api/playlists');
+    if (playlistRes.status === 429) {
+      const { retryAfter } = await playlistRes.json();
+      const hint = retryAfter !== '?' ? ` Try again in ${retryAfter} seconds.` : ' Try again shortly.';
+      grid.innerHTML = `<div class="state-message">Spotify rate limit reached.${hint}</div>`;
+      return;
+    }
+    if (!playlistRes.ok) throw new Error('Failed to load playlists');
+    allPlaylists = await playlistRes.json();
 
     if (allPlaylists.length === 0) {
       grid.innerHTML = '<div class="state-message">No playlists found.</div>';
@@ -50,11 +55,9 @@ function renderGrid() {
       ? `<img src="${escHtml(pl.imageUrl)}" alt="" loading="lazy" />`
       : `<div class="no-image">♫</div>`;
 
-    const editableTag = pl.isOwned ? '' : ' <span title="Collaborative or followed playlist">🔗</span>';
-
     card.innerHTML = `
       ${imgHtml}
-      <div class="playlist-name" title="${escHtml(pl.name)}">${escHtml(pl.name)}${editableTag}</div>
+      <div class="playlist-name" title="${escHtml(pl.name)}">${escHtml(pl.name)}</div>
       <div class="playlist-meta">${pl.trackCount} track${pl.trackCount !== 1 ? 's' : ''}</div>
       <div class="check-badge">
         <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">

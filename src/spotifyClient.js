@@ -97,14 +97,15 @@ async function fetchAllPages(session, path, params = {}, limitPerPage = 50) {
 async function getPlaylists(session) {
   const items = await fetchAllPages(session, '/me/playlists', {}, 50);
 
-  return items.map((p) => ({
-    id: p.id,
-    name: p.name,
-    trackCount: p.tracks?.total ?? p.items?.total ?? 0,
-    imageUrl: p.images?.[0]?.url || null,
-    isOwned: p.owner.id === session.userId,
-    public: p.public,
-  }));
+  return items
+    .filter((p) => p.owner.id === session.userId)
+    .map((p) => ({
+      id: p.id,
+      name: p.name,
+      trackCount: p.tracks?.total ?? p.items?.total ?? 0,
+      imageUrl: p.images?.[0]?.url || null,
+      public: p.public,
+    }));
 }
 
 // Return all tracks in a playlist with position, added_at, uri

@@ -125,11 +125,11 @@ app.get('/api/playlists', requireAuth, async (req, res) => {
     const playlists = await getPlaylists(req.session);
     res.json(playlists);
   } catch (err) {
+    console.error('Failed to fetch playlists:', err.response?.status, err.response?.data || err.message);
     if (err.response?.status === 429) {
       const retryAfter = err.response.headers['retry-after'] || '?';
       return res.status(429).json({ error: 'rate_limited', retryAfter });
     }
-    console.error('Failed to fetch playlists:', err.response?.data || err.message);
     res.status(500).json({ error: 'Failed to fetch playlists' });
   }
 });

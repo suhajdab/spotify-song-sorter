@@ -46,24 +46,23 @@ async function spotifyRequest(session, method, path, data = null, params = {}) {
       'Content-Type': 'application/json',
     },
     params,
+    timeout: 10000,
   };
   if (data) config.data = data;
 
+  const request = (cfg) => Promise.race([
+    axios(cfg),
+    new Promise((_, reject) => setTimeout(() => reject(new Error('Spotify request timed out after 10s')), 10000)),
+  ]);
+
   try {
-    const res = await axios(config);
+    const res = await request(config);
     return res.data;
   } catch (err) {
     if (err.response?.status === 401) {
-      // Token expired mid-request — refresh and retry once
       await refreshAccessToken(session);
       config.headers.Authorization = `Bearer ${session.accessToken}`;
-      const res = await axios(config);
-      return res.data;
-    }
-    if (err.response?.status === 429) {
-      const retryAfter = parseInt(err.response.headers['retry-after'] || '2', 10);
-      await new Promise(r => setTimeout(r, (retryAfter + 1) * 1000));
-      const res = await axios(config);
+      const res = await request(config);
       return res.data;
     }
     throw err;

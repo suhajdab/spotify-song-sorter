@@ -35,7 +35,7 @@ async function loadPlaylists() {
     const playlistRes = await fetch('/api/playlists');
     if (playlistRes.status === 429) {
       const { retryAfter } = await playlistRes.json();
-      const hint = retryAfter !== '?' ? ` Try again in ${retryAfter} seconds.` : ' Try again shortly.';
+      const hint = retryAfter !== '?' ? ` Try again in ${formatDuration(retryAfter)}.` : ' Try again shortly.';
       grid.innerHTML = `<div class="state-message">Spotify rate limit reached.${hint}</div>`;
       return;
     }
@@ -301,6 +301,16 @@ function filterPlaylists(query) {
     const name = card.querySelector('.playlist-name').textContent.toLowerCase();
     card.style.display = name.includes(q) ? '' : 'none';
   }
+}
+
+function formatDuration(seconds) {
+  seconds = parseInt(seconds, 10);
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
 }
 
 function logout() {

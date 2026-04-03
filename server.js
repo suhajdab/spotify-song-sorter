@@ -19,14 +19,27 @@ const SCOPES = [
   'playlist-modify-private',
 ].join(' ');
 
+if (!process.env.SESSION_SECRET) {
+  console.error('ERROR: SESSION_SECRET is not set. Copy .env.example to .env and set a strong secret.');
+  process.exit(1);
+}
+
 app.use(express.json());
 app.use(express.static('public'));
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'dev-secret-change-me',
+  secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 },
+  cookie: { secure: false, httpOnly: true, sameSite: 'lax', maxAge: 24 * 60 * 60 * 1000 },
 }));
+
+// ── Security headers ───────────────────────────────────────────────────────────
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Content-Security-Policy', "default-src 'self'; img-src 'self' https://i.scdn.co data:; style-src 'self' 'unsafe-inline'");
+  next();
+});
 
 // ── Auth routes ────────────────────────────────────────────────────────────────
 
@@ -142,6 +155,11 @@ app.post('/api/playlists/:id/sort', requireAuth, async (req, res) => {
   res.flushHeaders();
 
   const send = (data) => res.write(`data: ${JSON.stringify(data)}\n\n`);
+
+  if (!/^[A-Za-z0-9]{22}$/.test(req.params.id)) {
+    send({ type: 'error', message: 'Invalid playlist ID' });
+    return res.end();
+  }
 
   try {
     await sortPlaylist(req.session, req.params.id, send);

@@ -248,7 +248,7 @@ function handleSSEEvent(id, event) {
       const pct = Math.round((event.position / event.total) * 100);
       setBar(id, pct);
       if (event.moved) {
-        setStatus(id, `Moving "${truncate(event.name, 40)}"…`, null);
+        setStatus(id, `Moving "${escHtml(truncate(event.name, 40))}"…`);
       } else {
         setStatus(id, `Checking position ${event.position + 1} of ${event.total}…`, null);
       }
@@ -257,7 +257,7 @@ function handleSSEEvent(id, event) {
     }
 
     case 'error':
-      setStatus(id, `Error: ${event.message}`, null);
+      setStatus(id, `Error: ${escHtml(event.message)}`);
       setIcon(id, '❌');
       break;
 

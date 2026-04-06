@@ -3,6 +3,7 @@ const selected = new Set();
 const sorted = new Set();
 const modified = new Set(); // previously sorted but changed since
 let allPlaylists = [];
+let activeFilter = 'all';
 
 // ── localStorage helpers ───────────────────────────────────────────────────────
 const STORAGE_KEY = 'spotify-sorter-snapshots';
@@ -54,17 +55,57 @@ async function loadPlaylists() {
       else modified.add(pl.id);
     }
 
-    renderGrid();
+    if (modified.size > 0) {
+      activeFilter = 'needs-resorting';
+      renderGrid();
+      showResortPrompt();
+    } else {
+      renderGrid();
+    }
   } catch (err) {
     grid.innerHTML = `<div class="state-message">Error: ${err.message}</div>`;
   }
+}
+
+function filteredPlaylists() {
+  switch (activeFilter) {
+    case 'sorted':         return allPlaylists.filter(pl => sorted.has(pl.id));
+    case 'unsorted':       return allPlaylists.filter(pl => !sorted.has(pl.id) && !modified.has(pl.id));
+    case 'needs-resorting': return allPlaylists.filter(pl => modified.has(pl.id));
+    default:               return allPlaylists;
+  }
+}
+
+function updateFilterTabs() {
+  const unsortedCount = allPlaylists.filter(pl => !sorted.has(pl.id) && !modified.has(pl.id)).length;
+  document.getElementById('count-all').textContent = allPlaylists.length;
+  document.getElementById('count-unsorted').textContent = unsortedCount;
+  document.getElementById('count-sorted').textContent = sorted.size;
+  document.getElementById('count-needs-resorting').textContent = modified.size;
+
+  for (const tab of document.querySelectorAll('.filter-tab')) {
+    tab.classList.toggle('active', tab.dataset.filter === activeFilter);
+  }
+}
+
+function setFilter(filter) {
+  activeFilter = filter;
+  renderGrid();
 }
 
 function renderGrid() {
   const grid = document.getElementById('playlistGrid');
   grid.innerHTML = '';
 
-  for (const pl of allPlaylists) {
+  updateFilterTabs();
+
+  const visible = filteredPlaylists();
+  if (visible.length === 0) {
+    grid.innerHTML = '<div class="state-message">No playlists match this filter.</div>';
+    return;
+  }
+
+  for (const pl of visible) {
     const card = document.createElement('div');
     card.className = 'playlist-card' +
       (selected.has(pl.id)  ? ' selected'  : '') +
@@ -109,12 +150,12 @@ function toggleSelect(id) {
 }
 
 function selectAll() {
-  for (const pl of allPlaylists) selected.add(pl.id);
+  for (const pl of filteredPlaylists()) selected.add(pl.id);
   updateSelectionUI();
 }
 
 function deselectAll() {
-  selected.clear();
+  for (const pl of filteredPlaylists()) selected.delete(pl.id);
   updateSelectionUI();
 }
 
@@ -138,6 +179,8 @@ function updateSelectionUI() {
   document.getElementById('selectionCount').textContent =
     count === 0 ? '0 selected' : `${count} playlist${count !== 1 ? 's' : ''} selected`;
   document.getElementById('sortBtn').disabled = count === 0;
+
+  updateFilterTabs();
 }
 
 // ── Sort ───────────────────────────────────────────────────────────────────────
@@ -311,6 +354,32 @@ function formatDuration(seconds) {
   if (h > 0) return `${h}h ${m}m`;
   if (m > 0) return `${m}m ${s}s`;
   return `${s}s`;
+}
+
+// ── Re-sort prompt ─────────────────────────────────────────────────────────────
+function showResortPrompt() {
+  const list = document.getElementById('resortList');
+  list.innerHTML = '';
+  for (const id of modified) {
+    const pl = allPlaylists.find(p => p.id === id);
+    const li = document.createElement('li');
+    li.textContent = pl?.name || id;
+    list.appendChild(li);
+  }
+  document.getElementById('resortOverlay').classList.add('visible');
+}
+
+function dismissResort() {
+  document.getElementById('resortOverlay').classList.remove('visible');
+  activeFilter = 'all';
+  renderGrid();
+}
+
+function confirmResort() {
+  document.getElementById('resortOverlay').classList.remove('visible');
+  for (const id of modified) selected.add(id);
+  updateSelectionUI();
+  startSort();
 }
 
 function logout() {

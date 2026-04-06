@@ -21,6 +21,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 24px;
       position: sticky;
       top: 0;
       z-index: 10;
@@ -33,9 +34,57 @@
       gap: 10px;
       font-weight: 700;
       font-size: 1.1rem;
+      flex-shrink: 0;
     }
 
     .header-brand svg { width: 28px; height: 28px; }
+
+    .header-filters {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .filter-tab {
+      background: transparent;
+      border: 1px solid #535353;
+      color: #b3b3b3;
+      padding: 5px 14px;
+      border-radius: 500px;
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-weight: 500;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+      white-space: nowrap;
+    }
+
+    .filter-tab:hover { border-color: #fff; color: #fff; }
+
+    .filter-tab.active {
+      background: #fff;
+      border-color: #fff;
+      color: #000;
+    }
+
+    .filter-tab .tab-count {
+      display: inline-block;
+      margin-left: 5px;
+      background: rgba(0,0,0,0.2);
+      border-radius: 500px;
+      padding: 0 6px;
+      font-size: 0.75rem;
+      line-height: 1.5;
+    }
+
+    .filter-tab.active .tab-count {
+      background: rgba(0,0,0,0.15);
+    }
+
+    .filter-tab[data-filter="needs-resorting"].active {
+      background: #f59e0b;
+      border-color: #f59e0b;
+      color: #000;
+    }
 
     .header-right {
       display: flex;
@@ -43,6 +92,7 @@
       gap: 16px;
       font-size: 0.9rem;
       color: #b3b3b3;
+      flex-shrink: 0;
     }
 
     .search-wrap {
@@ -358,6 +408,64 @@
       display: flex;
       justify-content: flex-end;
     }
+
+    /* ── Re-sort prompt dialog ── */
+    .prompt-dialog {
+      background: #1e1e1e;
+      border: 1px solid #f59e0b;
+      border-radius: 12px;
+      padding: 28px 32px;
+      width: 100%;
+      max-width: 480px;
+    }
+
+    .prompt-dialog h2 {
+      font-size: 1.15rem;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .prompt-dialog .prompt-body {
+      color: #b3b3b3;
+      font-size: 0.88rem;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+
+    .prompt-dialog .prompt-list {
+      list-style: none;
+      margin-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 180px;
+      overflow-y: auto;
+    }
+
+    .prompt-dialog .prompt-list li {
+      font-size: 0.85rem;
+      padding: 6px 10px;
+      background: #282828;
+      border-radius: 6px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .prompt-dialog .prompt-footer {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+
+    .btn-warning {
+      background: #f59e0b;
+      color: #000;
+    }
+
+    .btn-warning:hover { background: #fbbf24; }
   </style>
 </head>
 <body>
@@ -368,6 +476,12 @@
         <path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6Z"/>
       </svg>
       Song Sorter
+    </div>
+    <div class="header-filters">
+      <button class="filter-tab active" data-filter="all" onclick="setFilter('all')">All <span class="tab-count" id="count-all"></span></button>
+      <button class="filter-tab" data-filter="unsorted" onclick="setFilter('unsorted')">Unsorted <span class="tab-count" id="count-unsorted"></span></button>
+      <button class="filter-tab" data-filter="sorted" onclick="setFilter('sorted')">Sorted <span class="tab-count" id="count-sorted"></span></button>
+      <button class="filter-tab" data-filter="needs-resorting" onclick="setFilter('needs-resorting')">Needs re-sorting <span class="tab-count" id="count-needs-resorting"></span></button>
     </div>
     <div class="header-right">
       <div class="search-wrap">
@@ -403,6 +517,19 @@
     <button class="btn btn-primary btn-sort" id="sortBtn" disabled onclick="startSort()">
       Sort Selected Playlists
     </button>
+  </div>
+
+  <!-- Re-sort prompt -->
+  <div class="modal-overlay" id="resortOverlay">
+    <div class="prompt-dialog">
+      <h2>⚠️ Playlists need re-sorting</h2>
+      <p class="prompt-body">The following playlists have changed since they were last sorted.</p>
+      <ul class="prompt-list" id="resortList"></ul>
+      <div class="prompt-footer">
+        <button class="btn btn-ghost" onclick="dismissResort()">Not now</button>
+        <button class="btn btn-warning" onclick="confirmResort()">Sort now</button>
+      </div>
+    </div>
   </div>
 
   <!-- Progress modal -->

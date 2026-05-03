@@ -225,6 +225,7 @@ function openModal(ids) {
 
 function closeModal() {
   document.getElementById('modalOverlay').classList.remove('visible');
+  setFilter('all');
 }
 
 async function sortOnePlaylist(id) {

@@ -5,18 +5,48 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Your Playlists — Spotify Song Sorter</title>
   <style>
+    :root {
+      --bg-0: #000;
+      --bg-1: #121212;
+      --bg-2: #181818;
+      --bg-3: #282828;
+      --bg-4: #3e3e3e;
+      --fg-1: #ffffff;
+      --fg-2: #b3b3b3;
+      --fg-3: #737373;
+      --fg-4: #535353;
+      --fg-5: #888888;
+      --brand: #1DB954;
+      --brand-hover: #1ed760;
+      --brand-tint: #1a3a27;
+      --warn: #f59e0b;
+      --warn-hover: #fbbf24;
+      --error: #e22134;
+      --scrim: rgba(0,0,0,0.75);
+      --pill-inset: rgba(0,0,0,0.2);
+      --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --r-xs: 4px;
+      --r-sm: 6px;
+      --r-md: 8px;
+      --r-lg: 12px;
+      --r-pill: 500px;
+      --t-quick: 0.1s;
+      --t-base: 0.15s;
+      --t-soft: 0.2s;
+    }
+
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #121212;
-      color: #fff;
+      font-family: var(--font-sans);
+      background: var(--bg-1);
+      color: var(--fg-1);
       min-height: 100vh;
     }
 
     /* ── Header ── */
     header {
-      background: #000;
+      background: var(--bg-0);
       padding: 16px 32px;
       display: flex;
       align-items: center;
@@ -25,7 +55,7 @@
       position: sticky;
       top: 0;
       z-index: 10;
-      border-bottom: 1px solid #282828;
+      border-bottom: 1px solid var(--bg-3);
     }
 
     .header-brand {
@@ -47,30 +77,30 @@
 
     .filter-tab {
       background: transparent;
-      border: 1px solid #535353;
-      color: #b3b3b3;
+      border: 1px solid var(--fg-4);
+      color: var(--fg-2);
       padding: 5px 14px;
-      border-radius: 500px;
+      border-radius: var(--r-pill);
       cursor: pointer;
       font-size: 0.82rem;
       font-weight: 500;
-      transition: border-color 0.15s, color 0.15s, background 0.15s;
+      transition: border-color var(--t-base), color var(--t-base), background var(--t-base);
       white-space: nowrap;
     }
 
-    .filter-tab:hover { border-color: #fff; color: #fff; }
+    .filter-tab:hover { border-color: var(--fg-1); color: var(--fg-1); }
 
     .filter-tab.active {
-      background: #fff;
-      border-color: #fff;
+      background: var(--fg-1);
+      border-color: var(--fg-1);
       color: #000;
     }
 
     .filter-tab .tab-count {
       display: inline-block;
       margin-left: 5px;
-      background: rgba(0,0,0,0.2);
-      border-radius: 500px;
+      background: var(--pill-inset);
+      border-radius: var(--r-pill);
       padding: 0 6px;
       font-size: 0.75rem;
       line-height: 1.5;
@@ -81,8 +111,8 @@
     }
 
     .filter-tab[data-filter="needs-resorting"].active {
-      background: #f59e0b;
-      border-color: #f59e0b;
+      background: var(--warn);
+      border-color: var(--warn);
       color: #000;
     }
 
@@ -91,7 +121,7 @@
       align-items: center;
       gap: 16px;
       font-size: 0.9rem;
-      color: #b3b3b3;
+      color: var(--fg-2);
       flex-shrink: 0;
     }
 
@@ -106,36 +136,36 @@
       left: 10px;
       width: 15px;
       height: 15px;
-      color: #b3b3b3;
+      color: var(--fg-2);
       pointer-events: none;
     }
 
     #searchInput {
-      background: #282828;
-      border: 1px solid #535353;
-      border-radius: 500px;
-      color: #fff;
+      background: var(--bg-3);
+      border: 1px solid var(--fg-4);
+      border-radius: var(--r-pill);
+      color: var(--fg-1);
       font-size: 0.85rem;
       padding: 7px 14px 7px 32px;
       width: 220px;
       outline: none;
-      transition: border-color 0.15s, width 0.2s;
+      transition: border-color var(--t-base), width var(--t-soft);
     }
 
-    #searchInput::placeholder { color: #737373; }
-    #searchInput:focus { border-color: #fff; width: 280px; }
+    #searchInput::placeholder { color: var(--fg-3); }
+    #searchInput:focus { border-color: var(--fg-1); width: 280px; }
 
     .btn-logout {
       background: transparent;
-      border: 1px solid #535353;
-      color: #fff;
+      border: 1px solid var(--fg-4);
+      color: var(--fg-1);
       padding: 6px 16px;
-      border-radius: 500px;
+      border-radius: var(--r-pill);
       cursor: pointer;
       font-size: 0.85rem;
-      transition: border-color 0.15s;
+      transition: border-color var(--t-base);
     }
-    .btn-logout:hover { border-color: #fff; }
+    .btn-logout:hover { border-color: var(--fg-1); }
 
     /* ── Main ── */
     main { max-width: 1200px; margin: 0 auto; padding: 32px 24px 120px; }
@@ -147,7 +177,7 @@
     }
 
     .page-subtitle {
-      color: #b3b3b3;
+      color: var(--fg-2);
       font-size: 0.9rem;
       margin-bottom: 24px;
     }
@@ -163,36 +193,37 @@
 
     .btn {
       padding: 8px 20px;
-      border-radius: 500px;
+      border-radius: var(--r-pill);
       border: none;
       cursor: pointer;
       font-size: 0.85rem;
       font-weight: 600;
-      transition: background 0.15s, transform 0.1s;
+      font-family: inherit;
+      transition: background var(--t-base), border-color var(--t-base), transform var(--t-quick);
     }
 
-    .btn:active { transform: scale(0.97); }
+    .btn:active:not(:disabled) { transform: scale(0.97); }
 
     .btn-ghost {
       background: transparent;
-      border: 1px solid #535353;
-      color: #fff;
+      border: 1px solid var(--fg-4);
+      color: var(--fg-1);
     }
-    .btn-ghost:hover { border-color: #fff; }
+    .btn-ghost:hover { border-color: var(--fg-1); }
 
     .btn-primary {
-      background: #1DB954;
+      background: var(--brand);
       color: #000;
     }
-    .btn-primary:hover:not(:disabled) { background: #1ed760; }
+    .btn-primary:hover:not(:disabled) { background: var(--brand-hover); }
     .btn-primary:disabled {
-      background: #535353;
-      color: #888;
+      background: var(--fg-4);
+      color: var(--fg-5);
       cursor: not-allowed;
     }
 
     .selection-count {
-      color: #b3b3b3;
+      color: var(--fg-2);
       font-size: 0.85rem;
       margin-left: auto;
     }
@@ -205,41 +236,41 @@
     }
 
     .playlist-card {
-      background: #181818;
-      border-radius: 8px;
+      background: var(--bg-2);
+      border-radius: var(--r-md);
       padding: 16px;
       cursor: pointer;
-      transition: background 0.15s;
+      transition: background var(--t-base);
       position: relative;
       user-select: none;
     }
 
-    .playlist-card:hover { background: #282828; }
+    .playlist-card:hover { background: var(--bg-3); }
 
     .playlist-card.selected {
-      background: #1a3a27;
-      outline: 2px solid #1DB954;
+      background: var(--brand-tint);
+      outline: 2px solid var(--brand);
     }
 
     .playlist-card img {
       width: 100%;
       aspect-ratio: 1;
       object-fit: cover;
-      border-radius: 4px;
+      border-radius: var(--r-xs);
       margin-bottom: 12px;
-      background: #333;
+      background: var(--bg-3);
     }
 
     .playlist-card .no-image {
       width: 100%;
       aspect-ratio: 1;
-      background: #282828;
-      border-radius: 4px;
+      background: var(--bg-3);
+      border-radius: var(--r-xs);
       margin-bottom: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #535353;
+      color: var(--fg-4);
       font-size: 2rem;
     }
 
@@ -252,7 +283,7 @@
     }
 
     .playlist-meta {
-      color: #b3b3b3;
+      color: var(--fg-2);
       font-size: 0.78rem;
       margin-top: 4px;
     }
@@ -263,14 +294,14 @@
       right: 10px;
       width: 22px;
       height: 22px;
-      background: #1DB954;
+      background: var(--brand);
       border-radius: 50%;
       display: none;
       align-items: center;
       justify-content: center;
     }
 
-    .playlist-card.selected .check-badge { display: flex; }
+    /* check-badge hidden — selection uses background + outline only */
 
     .check-badge svg { width: 13px; height: 13px; }
 
@@ -292,7 +323,7 @@
       left: 10px;
       width: 22px;
       height: 22px;
-      background: #1DB954;
+      background: var(--brand);
       border-radius: 50%;
       display: none;
       align-items: center;
@@ -307,15 +338,15 @@
     .state-message {
       text-align: center;
       padding: 64px 0;
-      color: #b3b3b3;
+      color: var(--fg-2);
       font-size: 0.95rem;
     }
 
     .spinner {
       width: 32px;
       height: 32px;
-      border: 3px solid #333;
-      border-top-color: #1DB954;
+      border: 3px solid var(--bg-4);
+      border-top-color: var(--brand);
       border-radius: 50%;
       animation: spin 0.7s linear infinite;
       margin: 0 auto 16px;
@@ -329,7 +360,7 @@
       bottom: 0;
       left: 0;
       right: 0;
-      background: linear-gradient(transparent, #121212 40%);
+      background: linear-gradient(transparent, var(--bg-1) 40%);
       padding: 24px;
       display: flex;
       justify-content: center;
@@ -338,14 +369,14 @@
     .btn-sort {
       padding: 14px 40px;
       font-size: 1rem;
-      border-radius: 500px;
+      border-radius: var(--r-pill);
     }
 
     /* ── Progress modal ── */
     .modal-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.75);
+      background: var(--scrim);
       display: none;
       align-items: center;
       justify-content: center;
@@ -356,8 +387,8 @@
     .modal-overlay.visible { display: flex; }
 
     .modal {
-      background: #282828;
-      border-radius: 12px;
+      background: var(--bg-3);
+      border-radius: var(--r-lg);
       padding: 32px;
       width: 100%;
       max-width: 480px;
@@ -365,7 +396,7 @@
       overflow-y: auto;
     }
 
-    .modal h2 { font-size: 1.2rem; margin-bottom: 20px; }
+    .modal h2 { font-size: 1.2rem; font-weight: 700; margin-bottom: 20px; }
 
     .playlist-progress-item {
       margin-bottom: 20px;
@@ -381,27 +412,32 @@
 
     .playlist-progress-item .status-text {
       font-size: 0.8rem;
-      color: #b3b3b3;
+      color: var(--fg-2);
       margin-bottom: 6px;
       min-height: 1em;
     }
 
     .progress-bar-bg {
-      background: #3e3e3e;
-      border-radius: 4px;
+      background: var(--bg-4);
+      border-radius: var(--r-xs);
       height: 6px;
       overflow: hidden;
     }
 
     .progress-bar-fill {
       height: 100%;
-      background: #1DB954;
-      border-radius: 4px;
+      background: var(--brand);
+      border-radius: var(--r-xs);
       width: 0%;
       transition: width 0.2s;
     }
 
-    .status-icon { font-size: 1rem; }
+    .status-icon { display: inline-flex; align-items: center; justify-content: center; }
+    .status-svg { width: 16px; height: 16px; }
+    .status-svg.muted { color: var(--fg-2); }
+    .status-svg.brand { color: var(--brand); }
+    .status-svg.error { color: var(--error); }
+    .status-svg.spin { animation: spin 1.1s linear infinite; }
 
     .modal-footer {
       margin-top: 24px;
@@ -412,8 +448,8 @@
     /* ── Re-sort prompt dialog ── */
     .prompt-dialog {
       background: #1e1e1e;
-      border: 1px solid #f59e0b;
-      border-radius: 12px;
+      border: 1px solid var(--warn);
+      border-radius: var(--r-lg);
       padding: 28px 32px;
       width: 100%;
       max-width: 480px;
@@ -428,7 +464,7 @@
     }
 
     .prompt-dialog .prompt-body {
-      color: #b3b3b3;
+      color: var(--fg-2);
       font-size: 0.88rem;
       margin-bottom: 20px;
       line-height: 1.5;
@@ -447,8 +483,8 @@
     .prompt-dialog .prompt-list li {
       font-size: 0.85rem;
       padding: 6px 10px;
-      background: #282828;
-      border-radius: 6px;
+      background: var(--bg-3);
+      border-radius: var(--r-sm);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -461,11 +497,11 @@
     }
 
     .btn-warning {
-      background: #f59e0b;
+      background: var(--warn);
       color: #000;
     }
 
-    .btn-warning:hover { background: #fbbf24; }
+    .btn-warning:hover { background: var(--warn-hover); }
   </style>
 </head>
 <body>

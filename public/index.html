@@ -5,12 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Spotify Song Sorter</title>
   <style>
+    :root {
+      --bg-1: #121212;
+      --fg-1: #ffffff;
+      --fg-2: #b3b3b3;
+      --brand: #1DB954;
+      --brand-hover: #1ed760;
+      --error: #e22134;
+      --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --r-md: 8px;
+      --r-pill: 500px;
+      --t-quick: 0.1s;
+      --t-base: 0.15s;
+    }
+
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #121212;
-      color: #fff;
+      font-family: var(--font-sans);
+      background: var(--bg-1);
+      color: var(--fg-1);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
@@ -31,7 +45,7 @@
     h1 { font-size: 2rem; font-weight: 700; letter-spacing: -0.5px; }
 
     p.tagline {
-      color: #b3b3b3;
+      color: var(--fg-2);
       font-size: 1rem;
       text-align: center;
       max-width: 380px;
@@ -42,23 +56,23 @@
       display: inline-flex;
       align-items: center;
       gap: 10px;
-      background: #1DB954;
+      background: var(--brand);
       color: #000;
       font-weight: 700;
       font-size: 0.95rem;
       padding: 14px 28px;
-      border-radius: 500px;
+      border-radius: var(--r-pill);
       text-decoration: none;
-      transition: background 0.15s, transform 0.1s;
+      transition: background var(--t-base), transform var(--t-quick);
     }
 
-    .btn-spotify:hover { background: #1ed760; transform: scale(1.03); }
+    .btn-spotify:hover { background: var(--brand-hover); transform: scale(1.03); }
 
     .error-banner {
-      background: #e22134;
-      color: #fff;
+      background: var(--error);
+      color: var(--fg-1);
       padding: 10px 20px;
-      border-radius: 8px;
+      border-radius: var(--r-md);
       font-size: 0.9rem;
       display: none;
     }

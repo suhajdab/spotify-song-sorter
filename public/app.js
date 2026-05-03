@@ -1,3 +1,11 @@
+// ── Status icons (SVG) ────────────────────────────────────────────────────────
+const STATUS_ICONS = {
+  waiting: `<svg class="status-svg muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>`,
+  loading: `<svg class="status-svg brand spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>`,
+  done:    `<svg class="status-svg brand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
+  error:   `<svg class="status-svg error" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`,
+};
+
 // ── State ──────────────────────────────────────────────────────────────────────
 const selected = new Set();
 const sorted = new Set();
@@ -178,7 +186,9 @@ function updateSelectionUI() {
   const count = selected.size;
   document.getElementById('selectionCount').textContent =
     count === 0 ? '0 selected' : `${count} playlist${count !== 1 ? 's' : ''} selected`;
-  document.getElementById('sortBtn').disabled = count === 0;
+  const sortBtn = document.getElementById('sortBtn');
+  sortBtn.disabled = count === 0;
+  sortBtn.textContent = count > 0 ? `Sort Selected Playlists (${count})` : 'Sort Selected Playlists';
 
   updateFilterTabs();
 }
@@ -209,7 +219,7 @@ function openModal(ids) {
     item.innerHTML = `
       <div class="name">
         <span>${escHtml(pl?.name || id)}</span>
-        <span class="status-icon" id="icon-${id}">⏳</span>
+        <span class="status-icon" id="icon-${id}">${STATUS_ICONS.waiting}</span>
       </div>
       <div class="status-text" id="status-${id}">Waiting…</div>
       <div class="progress-bar-bg">
@@ -276,7 +286,7 @@ function handleSSEEvent(id, event) {
     case 'status':
       setStatus(id, event.message, null);
       if (event.message.startsWith('Done')) {
-        setIcon(id, '✅');
+        setIcon(id, 'done');
         setBar(id, 100);
         const snapshotId = event.snapshotId || allPlaylists.find(p => p.id === id)?.snapshotId;
         if (snapshotId) saveSnapshot(id, snapshotId);
@@ -296,13 +306,13 @@ function handleSSEEvent(id, event) {
       } else {
         setStatus(id, `Checking position ${event.position + 1} of ${event.total}…`, null);
       }
-      setIcon(id, '🔄');
+      setIcon(id, 'loading');
       break;
     }
 
     case 'error':
       setStatus(id, `Error: ${escHtml(event.message)}`);
-      setIcon(id, '❌');
+      setIcon(id, 'error');
       break;
 
     case 'done':
@@ -319,7 +329,7 @@ function setStatus(id, text) {
 
 function setIcon(id, icon) {
   const el = document.getElementById(`icon-${id}`);
-  if (el) el.textContent = icon;
+  if (el) el.innerHTML = STATUS_ICONS[icon] || icon;
 }
 
 function setBar(id, pct) {

@@ -1,13 +1,15 @@
 require('dotenv').config();
 const express = require('express');
-const session = require('express-session');
 const crypto = require('crypto');
+const path = require('path');
 const axios = require('axios');
-const { getPlaylists } = require('./src/spotifyClient');
+const { createRevocationStoreFromEnv, encryptedCookieSession } = require('./src/session');
+const { ensureFreshToken, getPlaylists } = require('./src/spotifyClient');
 const { sortPlaylist } = require('./src/sorter');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const PUBLIC_DIR = path.join(__dirname, 'public');
 
 const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
 const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
@@ -25,12 +27,10 @@ if (!process.env.SESSION_SECRET) {
 }
 
 app.use(express.json());
-app.use(express.static('public'));
-app.use(session({
+app.use(express.static(PUBLIC_DIR));
+app.use(encryptedCookieSession({
   secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
-  cookie: { secure: false, httpOnly: true, sameSite: 'lax', maxAge: 24 * 60 * 60 * 1000 },
+  revocationStore: createRevocationStoreFromEnv(process.env),
 }));
 
 // ── Security headers ───────────────────────────────────────────────────────────
@@ -42,6 +42,14 @@ app.use((req, res, next) => {
 });
 
 // ── Auth routes ────────────────────────────────────────────────────────────────
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
+});
+
+app.get('/playlists.html', (req, res) => {
+  res.sendFile(path.join(PUBLIC_DIR, 'playlists.html'));
+});
 
 app.get('/auth/login', (req, res) => {
   const state = crypto.randomBytes(16).toString('hex');
@@ -67,7 +75,7 @@ app.get('/auth/callback', async (req, res) => {
     return res.redirect('/?error=' + encodeURIComponent(error));
   }
 
-  if (state !== req.session.oauthState) {
+  if (!state || !req.session.oauthState || state !== req.session.oauthState) {
     return res.redirect('/?error=state_mismatch');
   }
 
@@ -113,7 +121,13 @@ app.get('/auth/callback', async (req, res) => {
 });
 
 app.get('/auth/logout', (req, res) => {
-  req.session.destroy(() => res.redirect('/'));
+  req.session.destroy((err) => {
+    if (err) {
+      console.error('Failed to revoke session:', err.message);
+      return res.redirect('/?error=logout_failed');
+    }
+    res.redirect('/');
+  });
 });
 
 app.get('/auth/status', (req, res) => {
@@ -126,11 +140,18 @@ app.get('/auth/status', (req, res) => {
 
 // ── API routes ─────────────────────────────────────────────────────────────────
 
-function requireAuth(req, res, next) {
+async function requireAuth(req, res, next) {
   if (!req.session.accessToken) {
     return res.status(401).json({ error: 'Not authenticated' });
   }
-  next();
+
+  try {
+    await ensureFreshToken(req.session);
+    next();
+  } catch (err) {
+    console.error('Failed to refresh Spotify access token:', err.response?.data || err.message);
+    res.status(401).json({ error: 'Authentication expired' });
+  }
 }
 
 app.get('/api/playlists', requireAuth, async (req, res) => {
@@ -174,9 +195,13 @@ app.post('/api/playlists/:id/sort', requireAuth, async (req, res) => {
 
 // ── Start ──────────────────────────────────────────────────────────────────────
 
-app.listen(PORT, () => {
-  console.log(`Spotify Song Sorter running at http://localhost:${PORT}`);
-  if (!SPOTIFY_CLIENT_ID || !SPOTIFY_CLIENT_SECRET) {
-    console.warn('WARNING: SPOTIFY_CLIENT_ID or SPOTIFY_CLIENT_SECRET is not set. Copy .env.example to .env and fill in your credentials.');
-  }
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Spotify Song Sorter running at http://localhost:${PORT}`);
+    if (!SPOTIFY_CLIENT_ID || !SPOTIFY_CLIENT_SECRET) {
+      console.warn('WARNING: SPOTIFY_CLIENT_ID or SPOTIFY_CLIENT_SECRET is not set. Copy .env.example to .env and fill in your credentials.');
+    }
+  });
+}
+
+module.exports = app;

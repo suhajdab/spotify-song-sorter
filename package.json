@@ -3,14 +3,17 @@
   "version": "1.0.0",
   "description": "Sort Spotify playlists by date added (newest first) without changing added_at timestamps",
   "main": "server.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "start": "node server.js",
-    "dev": "node --watch server.js"
+    "dev": "node --watch server.js",
+    "test": "node --test"
   },
   "dependencies": {
     "axios": "^1.15.0",
     "dotenv": "^16.4.5",
-    "express": "^4.19.2",
-    "express-session": "^1.18.0"
+    "express": "^4.19.2"
   }
 }

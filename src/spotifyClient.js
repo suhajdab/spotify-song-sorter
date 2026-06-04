@@ -25,6 +25,12 @@ async function refreshAccessToken(session) {
     session.refreshToken = res.data.refresh_token;
   }
   session.tokenExpiresAt = Date.now() + (res.data.expires_in - 60) * 1000;
+
+  if (typeof session.save === 'function') {
+    await new Promise((resolve, reject) => {
+      session.save((err) => (err ? reject(err) : resolve()));
+    });
+  }
 }
 
 // Ensure we have a valid token, refreshing if needed
@@ -136,4 +142,4 @@ async function reorderTrack(session, playlistId, rangeStart, insertBefore, snaps
   return data.snapshot_id;
 }
 
-module.exports = { getPlaylists, getPlaylistTracks, reorderTrack };
+module.exports = { ensureFreshToken, getPlaylists, getPlaylistTracks, reorderTrack };

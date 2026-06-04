@@ -39,6 +39,41 @@ node server.js
 
 Open [http://127.0.0.1:3000](http://127.0.0.1:3000) in your browser.
 
+## Deploy to Vercel
+
+1. Import this repository into Vercel or run `vercel` from the project directory.
+2. Add these environment variables to the Vercel project:
+
+   - `SPOTIFY_CLIENT_ID`
+   - `SPOTIFY_CLIENT_SECRET`
+   - `SPOTIFY_REDIRECT_URI`
+   - `SESSION_SECRET`
+   - `UPSTASH_REDIS_REST_URL`
+   - `UPSTASH_REDIS_REST_TOKEN`
+
+3. Create an Upstash Redis integration from the Vercel Marketplace and connect
+   it to the project. The REST URL and token are used to revoke sessions across
+   serverless function instances when a user logs out.
+4. Set `SPOTIFY_REDIRECT_URI` to the deployed callback URL, for example:
+
+   ```
+   https://spotify-sorter.example/auth/callback
+   ```
+
+5. Add the same callback URL to the Redirect URIs for your app in the
+   [Spotify Developer Dashboard](https://developer.spotify.com/dashboard).
+6. Redeploy after changing environment variables.
+
+Use a stable production or custom domain for Spotify login. Each Vercel preview
+deployment has a different hostname, and Spotify only redirects to URLs that are
+registered exactly.
+
+`SESSION_SECRET` encrypts the cookie that contains the Spotify session. Generate
+it with the command in the local setup instructions and keep it private.
+Local development uses an in-memory session revocation store. Vercel deployments
+require the Upstash Redis REST variables so logout revocation works across
+function instances.
+
 ## Usage
 
 1. Log in with your Spotify account
@@ -50,4 +85,5 @@ Open [http://127.0.0.1:3000](http://127.0.0.1:3000) in your browser.
 
 - Only playlists you own can be reordered; collaborative/followed playlists show a 🔗 badge
 - Large playlists take longer — the app makes one API call per track that needs to move, with a short delay between calls to respect Spotify's rate limits
+- Vercel limits each sort request to 5 minutes, so very large playlists may need to be sorted in a different hosting environment
 - Sorting state (the green checkmarks) resets on page refresh

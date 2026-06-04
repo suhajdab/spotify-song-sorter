@@ -204,9 +204,13 @@ function encryptedCookieSession(options) {
     const originalWriteHead = res.writeHead;
     res.writeHead = function writeHead(...args) {
       if (!destroyed && Object.keys(session).length > 0 && !res.headersSent) {
-        const value = encodeSession(session, options.secret, metadata);
-        const maxAgeSeconds = Math.max(0, Math.ceil((metadata.expiresAt - Date.now()) / 1000));
-        res.setHeader('Set-Cookie', serializeCookie(value, req, maxAgeSeconds));
+        try {
+          const value = encodeSession(session, options.secret, metadata);
+          const maxAgeSeconds = Math.max(0, Math.ceil((metadata.expiresAt - Date.now()) / 1000));
+          res.setHeader('Set-Cookie', serializeCookie(value, req, maxAgeSeconds));
+        } catch {
+          // Do not fail the response if session data cannot be serialized.
+        }
       }
       return originalWriteHead.apply(this, args);
     };

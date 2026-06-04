@@ -63,6 +63,28 @@ test('Vercel deployments require a shared revocation store', () => {
   );
 });
 
+test('oversized session data does not fail automatic response writes', async () => {
+  const app = express();
+  const revocationStore = new MemoryRevocationStore();
+  app.use(encryptedCookieSession({ secret: SECRET, revocationStore }));
+  app.get('/oversized', (req, res) => {
+    req.session.value = 'x'.repeat(5000);
+    res.sendStatus(204);
+  });
+
+  const server = app.listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+
+  try {
+    const response = await fetch(`${baseUrl}/oversized`);
+    assert.equal(response.status, 204);
+    assert.equal(response.headers.get('set-cookie'), null);
+  } finally {
+    server.close();
+  }
+});
+
 test('logout revokes copied session cookies', async () => {
   const app = express();
   const revocationStore = new MemoryRevocationStore();

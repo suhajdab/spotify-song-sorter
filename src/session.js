@@ -160,18 +160,18 @@ class UpstashRevocationStore {
 }
 
 function createRevocationStoreFromEnv(env) {
-  const url = env.UPSTASH_REDIS_REST_URL;
-  const token = env.UPSTASH_REDIS_REST_TOKEN;
+  const url = env.UPSTASH_REDIS_REST_KV_REST_API_URL;
+  const token = env.UPSTASH_REDIS_REST_KV_REST_API_TOKEN;
 
   if (url && token) return new UpstashRevocationStore({ url, token });
   if (url || token) {
     throw new Error(
-      'UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN must be configured together'
+      'UPSTASH_REDIS_REST_KV_REST_API_URL and UPSTASH_REDIS_REST_KV_REST_API_TOKEN must be configured together'
     );
   }
   if (env.VERCEL) {
     throw new Error(
-      'UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN are required on Vercel'
+      'UPSTASH_REDIS_REST_KV_REST_API_URL and UPSTASH_REDIS_REST_KV_REST_API_TOKEN are required on Vercel'
     );
   }
   return new MemoryRevocationStore();

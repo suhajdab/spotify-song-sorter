@@ -59,7 +59,7 @@ test('encrypted sessions preserve their absolute expiry when re-encoded', () => 
 test('Vercel deployments require a shared revocation store', () => {
   assert.throws(
     () => createRevocationStoreFromEnv({ VERCEL: '1' }),
-    /UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN are required/
+    /UPSTASH_REDIS_REST_KV_REST_API_URL and UPSTASH_REDIS_REST_KV_REST_API_TOKEN are required/
   );
 });
 

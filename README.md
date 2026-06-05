@@ -48,8 +48,8 @@ Open [http://127.0.0.1:3000](http://127.0.0.1:3000) in your browser.
    - `SPOTIFY_CLIENT_SECRET`
    - `SPOTIFY_REDIRECT_URI`
    - `SESSION_SECRET`
-   - `UPSTASH_REDIS_REST_URL`
-   - `UPSTASH_REDIS_REST_TOKEN`
+   - `UPSTASH_REDIS_REST_KV_REST_API_URL`
+   - `UPSTASH_REDIS_REST_KV_REST_API_TOKEN`
 
 3. Create an Upstash Redis integration from the Vercel Marketplace and connect
    it to the project. The REST URL and token are used to revoke sessions across

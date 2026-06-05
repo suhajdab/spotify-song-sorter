@@ -31,6 +31,14 @@ if (!process.env.SESSION_SECRET) {
   process.exit(1);
 }
 
+// ── Security headers ───────────────────────────────────────────────────────────
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Content-Security-Policy', "default-src 'self'; img-src 'self' https://i.scdn.co data:; style-src 'self' 'unsafe-inline'");
+  next();
+});
+
 app.use(express.json());
 app.get('/vendor/vercel-analytics.js', (req, res) => {
   res.type('application/javascript');
@@ -41,14 +49,6 @@ app.use(encryptedCookieSession({
   secret: process.env.SESSION_SECRET,
   revocationStore: createRevocationStoreFromEnv(process.env),
 }));
-
-// ── Security headers ───────────────────────────────────────────────────────────
-app.use((req, res, next) => {
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
-  res.setHeader('Content-Security-Policy', "default-src 'self'; img-src 'self' https://i.scdn.co data:; style-src 'self' 'unsafe-inline'");
-  next();
-});
 
 // ── Auth routes ────────────────────────────────────────────────────────────────
 

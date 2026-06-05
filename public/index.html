@@ -4,7 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Spotify Song Sorter</title>
-  <script type="module" src="/analytics.js"></script>
+  <script defer src="/_vercel/insights/script.js"></script>
+  <script defer src="/index.js"></script>
   <style>
     :root {
       --bg-1: #121212;
@@ -102,23 +103,5 @@
     </svg>
     Login with Spotify
   </a>
-
-  <script>
-    // Redirect to playlists if already logged in
-    fetch('/auth/status')
-      .then(r => r.json())
-      .then(data => {
-        if (data.loggedIn) window.location.href = '/playlists.html';
-      });
-
-    // Show error from query string
-    const params = new URLSearchParams(location.search);
-    const err = params.get('error');
-    if (err) {
-      const banner = document.getElementById('errorBanner');
-      banner.textContent = 'Login failed: ' + err.replace(/_/g, ' ');
-      banner.style.display = 'block';
-    }
-  </script>
 </body>
 </html>

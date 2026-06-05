@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Your Playlists — Spotify Song Sorter</title>
-  <script type="module" src="/analytics.js"></script>
+  <script defer src="/_vercel/insights/script.js"></script>
   <style>
     :root {
       --bg-0: #000;
@@ -515,20 +515,20 @@
       Song Sorter
     </div>
     <div class="header-filters">
-      <button class="filter-tab active" data-filter="all" onclick="setFilter('all')">All <span class="tab-count" id="count-all"></span></button>
-      <button class="filter-tab" data-filter="unsorted" onclick="setFilter('unsorted')">Unsorted <span class="tab-count" id="count-unsorted"></span></button>
-      <button class="filter-tab" data-filter="sorted" onclick="setFilter('sorted')">Sorted <span class="tab-count" id="count-sorted"></span></button>
-      <button class="filter-tab" data-filter="needs-resorting" onclick="setFilter('needs-resorting')">Needs re-sorting <span class="tab-count" id="count-needs-resorting"></span></button>
+      <button class="filter-tab active" data-filter="all">All <span class="tab-count" id="count-all"></span></button>
+      <button class="filter-tab" data-filter="unsorted">Unsorted <span class="tab-count" id="count-unsorted"></span></button>
+      <button class="filter-tab" data-filter="sorted">Sorted <span class="tab-count" id="count-sorted"></span></button>
+      <button class="filter-tab" data-filter="needs-resorting">Needs re-sorting <span class="tab-count" id="count-needs-resorting"></span></button>
     </div>
     <div class="header-right">
       <div class="search-wrap">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
         </svg>
-        <input id="searchInput" type="search" placeholder="Search playlists…" oninput="filterPlaylists(this.value)" />
+        <input id="searchInput" type="search" placeholder="Search playlists…" />
       </div>
       <span id="displayName"></span>
-      <button class="btn-logout" onclick="logout()">Log out</button>
+      <button class="btn-logout" id="logoutBtn">Log out</button>
     </div>
   </header>
 
@@ -537,8 +537,8 @@
     <p class="page-subtitle">Select playlists to sort by date added (newest first).</p>
 
     <div class="controls">
-      <button class="btn btn-ghost" onclick="selectAll()">Select All</button>
-      <button class="btn btn-ghost" onclick="deselectAll()">Deselect All</button>
+      <button class="btn btn-ghost" id="selectAllBtn">Select All</button>
+      <button class="btn btn-ghost" id="deselectAllBtn">Deselect All</button>
       <span class="selection-count" id="selectionCount">0 selected</span>
     </div>
 
@@ -551,7 +551,7 @@
   </main>
 
   <div class="action-bar">
-    <button class="btn btn-primary btn-sort" id="sortBtn" disabled onclick="startSort()">
+    <button class="btn btn-primary btn-sort" id="sortBtn" disabled>
       Sort Selected Playlists
     </button>
   </div>
@@ -563,8 +563,8 @@
       <p class="prompt-body">The following playlists have changed since they were last sorted.</p>
       <ul class="prompt-list" id="resortList"></ul>
       <div class="prompt-footer">
-        <button class="btn btn-ghost" onclick="dismissResort()">Not now</button>
-        <button class="btn btn-warning" onclick="confirmResort()">Sort now</button>
+        <button class="btn btn-ghost" id="dismissResortBtn">Not now</button>
+        <button class="btn btn-warning" id="confirmResortBtn">Sort now</button>
       </div>
     </div>
   </div>
@@ -575,7 +575,7 @@
       <h2>Sorting Playlists</h2>
       <div id="progressList"></div>
       <div class="modal-footer">
-        <button class="btn btn-primary" id="doneBtn" style="display:none" onclick="closeModal()">Done</button>
+        <button class="btn btn-primary" id="doneBtn" style="display:none">Done</button>
       </div>
     </div>
   </div>

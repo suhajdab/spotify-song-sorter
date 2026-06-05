@@ -30,7 +30,7 @@ if (!process.env.SESSION_SECRET) {
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
-  res.setHeader('Content-Security-Policy', "default-src 'self'; img-src 'self' https://i.scdn.co https://*.spotifycdn.com data:; style-src 'self' 'unsafe-inline'");
+  res.setHeader('Content-Security-Policy', "default-src 'self'; img-src 'self' https://*.scdn.co https://*.spotifycdn.com data:; style-src 'self' 'unsafe-inline'");
   next();
 });
 

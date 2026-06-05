@@ -10,11 +10,6 @@ const { sortPlaylist } = require('./src/sorter');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const PUBLIC_DIR = path.join(__dirname, 'public');
-const VERCEL_ANALYTICS_MODULE = path.join(
-  path.dirname(require.resolve('@vercel/analytics/package.json')),
-  'dist',
-  'index.mjs'
-);
 
 const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
 const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
@@ -40,10 +35,6 @@ app.use((req, res, next) => {
 });
 
 app.use(express.json());
-app.get('/vendor/vercel-analytics.js', (req, res) => {
-  res.type('application/javascript');
-  res.sendFile(VERCEL_ANALYTICS_MODULE);
-});
 app.use(express.static(PUBLIC_DIR));
 app.use(encryptedCookieSession({
   secret: process.env.SESSION_SECRET,

@@ -26,14 +26,34 @@ function saveSnapshot(id, snapshotId) {
 
 // ── Boot ───────────────────────────────────────────────────────────────────────
 (async function init() {
+  bindControls();
+
   const status = await fetch('/auth/status').then(r => r.json());
   if (!status.loggedIn) {
-    window.location.href = '/';
+    window.location.replace('/');
     return;
   }
   document.getElementById('displayName').textContent = status.displayName || '';
   await loadPlaylists();
 })();
+
+function bindControls() {
+  document.querySelectorAll('.filter-tab').forEach(tab => {
+    tab.addEventListener('click', () => setFilter(tab.dataset.filter));
+  });
+
+  document.getElementById('searchInput')?.addEventListener('input', event => {
+    filterPlaylists(event.target.value);
+  });
+
+  document.getElementById('logoutBtn')?.addEventListener('click', logout);
+  document.getElementById('selectAllBtn')?.addEventListener('click', selectAll);
+  document.getElementById('deselectAllBtn')?.addEventListener('click', deselectAll);
+  document.getElementById('sortBtn')?.addEventListener('click', startSort);
+  document.getElementById('dismissResortBtn')?.addEventListener('click', dismissResort);
+  document.getElementById('confirmResortBtn')?.addEventListener('click', confirmResort);
+  document.getElementById('doneBtn')?.addEventListener('click', closeModal);
+}
 
 // ── Load playlists ─────────────────────────────────────────────────────────────
 async function loadPlaylists() {

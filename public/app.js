@@ -45,8 +45,13 @@ function redirectToLogin() {
 }
 
 function bindControls() {
+  document.getElementById('menuToggle')?.addEventListener('click', toggleHeaderMenu);
+
   document.querySelectorAll('.filter-tab').forEach(tab => {
-    tab.addEventListener('click', () => setFilter(tab.dataset.filter));
+    tab.addEventListener('click', () => {
+      setFilter(tab.dataset.filter);
+      closeHeaderMenu();
+    });
   });
 
   document.getElementById('searchInput')?.addEventListener('input', event => {
@@ -61,6 +66,34 @@ function bindControls() {
   document.getElementById('confirmResortBtn')?.addEventListener('click', confirmResort);
   document.getElementById('doneBtn')?.addEventListener('click', closeModal);
   document.getElementById('notificationsBtn')?.addEventListener('click', enableNotifications);
+
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') closeHeaderMenu();
+  });
+
+  window.addEventListener('resize', () => {
+    if (!window.matchMedia('(max-width: 900px)').matches) closeHeaderMenu();
+  });
+}
+
+function toggleHeaderMenu() {
+  const header = document.querySelector('header');
+  const toggle = document.getElementById('menuToggle');
+  if (!header || !toggle) return;
+
+  const isOpen = header.classList.toggle('menu-open');
+  toggle.setAttribute('aria-expanded', String(isOpen));
+  toggle.setAttribute('aria-label', isOpen ? 'Close menu' : 'Open menu');
+}
+
+function closeHeaderMenu() {
+  const header = document.querySelector('header');
+  const toggle = document.getElementById('menuToggle');
+  if (!header || !toggle || !header.classList.contains('menu-open')) return;
+
+  header.classList.remove('menu-open');
+  toggle.setAttribute('aria-expanded', 'false');
+  toggle.setAttribute('aria-label', 'Open menu');
 }
 
 // ── Load playlists ─────────────────────────────────────────────────────────────

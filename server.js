@@ -4,7 +4,11 @@ const crypto = require('crypto');
 const path = require('path');
 const axios = require('axios');
 const { createRevocationStoreFromEnv, encryptedCookieSession } = require('./src/session');
-const { ensureFreshToken, getPlaylists } = require('./src/spotifyClient');
+const {
+  ensureFreshToken,
+  getPlaylists,
+  isAuthenticationExpiredError,
+} = require('./src/spotifyClient');
 const { sortPlaylist } = require('./src/sorter');
 
 const app = express();
@@ -130,11 +134,42 @@ app.get('/auth/logout', (req, res) => {
   });
 });
 
-app.get('/auth/status', (req, res) => {
-  if (req.session.accessToken) {
-    res.json({ loggedIn: true, displayName: req.session.displayName });
-  } else {
+async function destroySession(req, res) {
+  if (res?.headersSent) return;
+  if (typeof req.session?.destroy !== 'function') return;
+
+  await new Promise((resolve) => {
+    req.session.destroy((err) => {
+      if (err) {
+        console.error('Failed to clear expired session:', err.message);
+      }
+      resolve();
+    });
+  });
+}
+
+async function sendAuthExpired(req, res) {
+  await destroySession(req, res);
+  res.status(401).json({ error: 'Authentication expired', code: 'authentication_expired' });
+}
+
+app.get('/auth/status', async (req, res) => {
+  if (!req.session.accessToken) {
     res.json({ loggedIn: false });
+    return;
+  }
+
+  try {
+    await ensureFreshToken(req.session);
+    res.json({ loggedIn: true, displayName: req.session.displayName });
+  } catch (err) {
+    console.error('Failed to refresh Spotify access token:', err.response?.data || err.message);
+    if (isAuthenticationExpiredError(err)) {
+      await destroySession(req, res);
+      res.json({ loggedIn: false, code: 'authentication_expired' });
+      return;
+    }
+    res.status(503).json({ error: 'Unable to verify authentication status' });
   }
 });
 
@@ -150,7 +185,11 @@ async function requireAuth(req, res, next) {
     next();
   } catch (err) {
     console.error('Failed to refresh Spotify access token:', err.response?.data || err.message);
-    res.status(401).json({ error: 'Authentication expired' });
+    if (isAuthenticationExpiredError(err)) {
+      await sendAuthExpired(req, res);
+      return;
+    }
+    res.status(502).json({ error: 'Failed to refresh Spotify access token' });
   }
 }
 
@@ -160,6 +199,10 @@ app.get('/api/playlists', requireAuth, async (req, res) => {
     res.json(playlists);
   } catch (err) {
     console.error('Failed to fetch playlists:', err.response?.status, err.response?.data || err.message);
+    if (isAuthenticationExpiredError(err)) {
+      await sendAuthExpired(req, res);
+      return;
+    }
     if (err.response?.status === 429) {
       const retryAfter = err.response.headers['retry-after'] || '?';
       return res.status(429).json({ error: 'rate_limited', retryAfter });
@@ -187,7 +230,12 @@ app.post('/api/playlists/:id/sort', requireAuth, async (req, res) => {
     send({ type: 'done' });
   } catch (err) {
     console.error('Sort failed:', err.response?.data || err.message);
-    send({ type: 'error', message: err.response?.data?.error?.message || err.message });
+    if (isAuthenticationExpiredError(err)) {
+      await destroySession(req, res);
+      send({ type: 'auth_expired', message: 'Authentication expired' });
+    } else {
+      send({ type: 'error', message: err.response?.data?.error?.message || err.message });
+    }
   } finally {
     res.end();
   }

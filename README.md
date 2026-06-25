@@ -30,6 +30,12 @@ Edit `.env` and fill in your Client ID, Client Secret, and a random session secr
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
+To enable push notifications, generate VAPID keys and add them to `.env`:
+
+```bash
+npx web-push generate-vapid-keys
+```
+
 ### 3. Install and run
 
 ```bash
@@ -48,6 +54,10 @@ Open [http://127.0.0.1:3000](http://127.0.0.1:3000) in your browser.
    - `SPOTIFY_CLIENT_SECRET`
    - `SPOTIFY_REDIRECT_URI`
    - `SESSION_SECRET`
+   - `CRON_SECRET`
+   - `VAPID_PUBLIC_KEY`
+   - `VAPID_PRIVATE_KEY`
+   - `VAPID_SUBJECT`
    - `UPSTASH_REDIS_REST_KV_REST_API_URL`
    - `UPSTASH_REDIS_REST_KV_REST_API_TOKEN`
 
@@ -74,16 +84,28 @@ Local development uses an in-memory session revocation store. Vercel deployments
 require the Upstash Redis REST variables so logout revocation works across
 function instances.
 
+The production deployment also uses the same Upstash Redis store for background
+playlist tracking and push subscriptions. Vercel Cron calls
+`/api/cron/check-resort-needed` once per day at 08:00 UTC by default. If the
+project is on Vercel Pro, the cron schedule in `vercel.json` can be changed to
+hourly, for example `0 * * * *`.
+
 ## Usage
 
 1. Log in with your Spotify account
 2. Select one or more playlists (use the search field to find them)
 3. Click **Sort Selected Playlists**
 4. Sorted playlists get a green checkmark — sorting is non-destructive and can be run again anytime
+5. On iOS, add the site to the Home Screen, open it from the Home Screen icon,
+   and enable notifications. The app will notify you when a tracked sorted
+   playlist has a newer Spotify snapshot and needs re-sorting.
 
 ## Notes
 
 - Only playlists you own can be reordered; collaborative/followed playlists show a 🔗 badge
 - Large playlists take longer — the app makes one API call per track that needs to move, with a short delay between calls to respect Spotify's rate limits
 - Vercel limits each sort request to 5 minutes, so very large playlists may need to be sorted in a different hosting environment
-- Sorting state (the green checkmarks) resets on page refresh
+- iOS Web Push requires iOS/iPadOS 16.4 or newer and only works after the site
+  is installed as a Home Screen web app
+- Sorting state is saved on the server for background checks; older local
+  browser state is still used as a fallback in the playlist view

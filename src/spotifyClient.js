@@ -67,7 +67,7 @@ async function refreshAccessToken(session) {
 
 // Ensure we have a valid token, refreshing if needed
 async function ensureFreshToken(session) {
-  if (session.tokenExpiresAt && Date.now() > session.tokenExpiresAt) {
+  if (!session.accessToken || (session.tokenExpiresAt && Date.now() > session.tokenExpiresAt)) {
     await refreshAccessToken(session);
   }
 }
@@ -153,6 +153,20 @@ async function getPlaylists(session) {
     }));
 }
 
+async function getPlaylistSummary(session, playlistId) {
+  const playlist = await spotifyRequest(session, 'GET', `/playlists/${playlistId}`, null, {
+    fields: 'id,name,snapshot_id,tracks.total,owner.id',
+  });
+
+  return {
+    id: playlist.id,
+    name: playlist.name,
+    snapshotId: playlist.snapshot_id,
+    trackCount: playlist.tracks?.total ?? 0,
+    ownerId: playlist.owner?.id,
+  };
+}
+
 // Return all tracks in a playlist with position, added_at, uri
 async function getPlaylistTracks(session, playlistId) {
   const items = await fetchAllPages(
@@ -184,7 +198,9 @@ async function reorderTrack(session, playlistId, rangeStart, insertBefore, snaps
 module.exports = {
   ensureFreshToken,
   getPlaylists,
+  getPlaylistSummary,
   getPlaylistTracks,
+  refreshAccessToken,
   reorderTrack,
   AuthenticationExpiredError,
   isAuthenticationExpiredError,

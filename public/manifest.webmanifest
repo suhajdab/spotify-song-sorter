@@ -1,0 +1,19 @@
+{
+  "id": "/",
+  "name": "Spotify Song Sorter",
+  "short_name": "Song Sorter",
+  "description": "Sort Spotify playlists newest-first and get notified when they need re-sorting.",
+  "start_url": "/playlists.html",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#121212",
+  "theme_color": "#121212",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -12,6 +12,8 @@ const sorted = new Set();
 const modified = new Set(); // previously sorted but changed since
 let allPlaylists = [];
 let activeFilter = 'all';
+let notificationPublicKey = null;
+let notificationsConfigured = false;
 
 // ── localStorage helpers ───────────────────────────────────────────────────────
 const STORAGE_KEY = 'spotify-sorter-snapshots';
@@ -34,6 +36,7 @@ function saveSnapshot(id, snapshotId) {
     return;
   }
   document.getElementById('displayName').textContent = status.displayName || '';
+  await initNotifications();
   await loadPlaylists();
 })();
 
@@ -57,6 +60,7 @@ function bindControls() {
   document.getElementById('dismissResortBtn')?.addEventListener('click', dismissResort);
   document.getElementById('confirmResortBtn')?.addEventListener('click', confirmResort);
   document.getElementById('doneBtn')?.addEventListener('click', closeModal);
+  document.getElementById('notificationsBtn')?.addEventListener('click', enableNotifications);
 }
 
 // ── Load playlists ─────────────────────────────────────────────────────────────
@@ -85,14 +89,22 @@ async function loadPlaylists() {
     }
 
     const snapshots = loadSnapshots();
+    const trackedById = await loadTrackedPlaylists();
     for (const pl of allPlaylists) {
-      if (!pl.snapshotId || !snapshots[pl.id]) continue;
-      if (snapshots[pl.id] === pl.snapshotId) sorted.add(pl.id);
+      const tracked = trackedById.get(pl.id);
+      const lastSortedSnapshotId = tracked?.lastSortedSnapshotId || snapshots[pl.id];
+      if (!pl.snapshotId || !lastSortedSnapshotId) continue;
+      if (lastSortedSnapshotId === pl.snapshotId && !tracked?.needsResort) sorted.add(pl.id);
       else modified.add(pl.id);
     }
 
+    const urlFilter = new URLSearchParams(window.location.search).get('filter');
+    if (['all', 'unsorted', 'sorted', 'needs-resorting'].includes(urlFilter)) {
+      activeFilter = urlFilter;
+    }
+
     if (modified.size > 0) {
-      activeFilter = 'needs-resorting';
+      if (!urlFilter) activeFilter = 'needs-resorting';
       renderGrid();
       showResortPrompt();
     } else {
@@ -100,6 +112,17 @@ async function loadPlaylists() {
     }
   } catch (err) {
     grid.innerHTML = `<div class="state-message">Error: ${err.message}</div>`;
+  }
+}
+
+async function loadTrackedPlaylists() {
+  try {
+    const res = await fetch('/api/tracked-playlists');
+    if (!res.ok) return new Map();
+    const body = await res.json();
+    return new Map((body.playlists || []).map((playlist) => [playlist.id, playlist]));
+  } catch {
+    return new Map();
   }
 }
 
@@ -355,7 +378,166 @@ function handleSSEEvent(id, event) {
     case 'done':
       // final sentinel — status message already set
       break;
+
+    case 'tracking':
+      if (event.snapshotId) saveSnapshot(id, event.snapshotId);
+      markSorted(id);
+      updateNotificationStatus();
+      break;
+
+    case 'tracking_error':
+      setStatus(id, event.message);
+      break;
+
+    case 'auth_expired':
+      window.location.replace('/?error=authentication_expired');
+      break;
   }
+}
+
+// ── Notifications ─────────────────────────────────────────────────────────────
+async function initNotifications() {
+  await updateNotificationStatus();
+
+  if ('serviceWorker' in navigator) {
+    try {
+      await navigator.serviceWorker.register('/service-worker.js');
+    } catch {
+      renderNotificationStatus('Service worker unavailable.', true);
+    }
+  }
+}
+
+async function updateNotificationStatus() {
+  const btn = document.getElementById('notificationsBtn');
+  if (!btn) return;
+
+  if (!supportsPushNotifications()) {
+    renderNotificationStatus('Notifications unavailable in this browser.', true);
+    return;
+  }
+
+  if (isIosDevice() && !isStandaloneWebApp()) {
+    renderNotificationStatus('Install to Home Screen to enable iOS notifications.', true);
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/notifications/status');
+    if (!res.ok) throw new Error('Unable to load notification status');
+    const status = await res.json();
+    notificationsConfigured = status.configured;
+    notificationPublicKey = status.publicKey;
+
+    if (!status.configured) {
+      renderNotificationStatus('Push is not configured on the server.', true);
+      return;
+    }
+
+    if (Notification.permission === 'denied') {
+      renderNotificationStatus('Notifications are blocked.', true);
+      return;
+    }
+
+    if (status.subscribed) {
+      renderNotificationStatus(
+        status.trackedCount > 0
+          ? `${status.trackedCount} sorted playlist${status.trackedCount === 1 ? '' : 's'} tracked.`
+          : 'Notifications enabled.',
+        false,
+        'Enabled'
+      );
+      return;
+    }
+
+    renderNotificationStatus('Off', false, 'Enable Notifications');
+  } catch {
+    renderNotificationStatus('Notification status unavailable.', true);
+  }
+}
+
+function renderNotificationStatus(message, disabled, buttonText = 'Enable Notifications') {
+  const btn = document.getElementById('notificationsBtn');
+  const status = document.getElementById('notificationsStatus');
+  if (btn) {
+    btn.textContent = buttonText;
+    btn.disabled = disabled || buttonText === 'Enabled';
+  }
+  if (status) status.textContent = message;
+}
+
+async function enableNotifications() {
+  const btn = document.getElementById('notificationsBtn');
+  if (btn) btn.disabled = true;
+
+  try {
+    if (!supportsPushNotifications()) {
+      renderNotificationStatus('Notifications unavailable in this browser.', true);
+      return;
+    }
+    if (isIosDevice() && !isStandaloneWebApp()) {
+      renderNotificationStatus('Install to Home Screen to enable iOS notifications.', true);
+      return;
+    }
+
+    const statusRes = await fetch('/api/notifications/status');
+    if (!statusRes.ok) throw new Error('Unable to load notification status');
+    const status = await statusRes.json();
+    notificationsConfigured = status.configured;
+    notificationPublicKey = status.publicKey;
+    if (!notificationsConfigured || !notificationPublicKey) {
+      renderNotificationStatus('Push is not configured on the server.', true);
+      return;
+    }
+
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      renderNotificationStatus(permission === 'denied' ? 'Notifications are blocked.' : 'Permission not granted.', permission === 'denied');
+      return;
+    }
+
+    const registration = await navigator.serviceWorker.ready;
+    const existing = await registration.pushManager.getSubscription();
+    const subscription = existing || await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(notificationPublicKey),
+    });
+
+    const saveRes = await fetch('/api/notifications/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subscription: subscription.toJSON() }),
+    });
+    if (!saveRes.ok) throw new Error('Failed to save push subscription');
+
+    await updateNotificationStatus();
+  } catch (err) {
+    renderNotificationStatus(err.message || 'Notifications unavailable.', false);
+  }
+}
+
+function supportsPushNotifications() {
+  return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+}
+
+function isIosDevice() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+function isStandaloneWebApp() {
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; i++) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────

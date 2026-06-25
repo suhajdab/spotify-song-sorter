@@ -85,6 +85,7 @@ async function sortPlaylist(session, playlistId, onProgress) {
   }
 
   onProgress({ type: 'status', message: `Done. Moved ${moveCount} of ${desired.length} tracks.`, snapshotId });
+  return { moveCount, snapshotId, total: desired.length };
 }
 
 module.exports = { sortPlaylist };

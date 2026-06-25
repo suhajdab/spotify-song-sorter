@@ -3,7 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#121212" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Song Sorter" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="apple-touch-icon" href="/favicon.svg" />
+  <link rel="manifest" href="/manifest.webmanifest" />
   <title>Your Playlists — Spotify Song Sorter</title>
   <script defer src="/_vercel/insights/script.js"></script>
   <style>
@@ -228,6 +234,20 @@
       color: var(--fg-2);
       font-size: 0.85rem;
       margin-left: auto;
+    }
+
+    .notification-control {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 220px;
+    }
+
+    .notification-status {
+      color: var(--fg-2);
+      font-size: 0.78rem;
+      line-height: 1.35;
+      max-width: 260px;
     }
 
     /* ── Playlist grid ── */
@@ -540,6 +560,10 @@
     <div class="controls">
       <button class="btn btn-ghost" id="selectAllBtn">Select All</button>
       <button class="btn btn-ghost" id="deselectAllBtn">Deselect All</button>
+      <div class="notification-control">
+        <button class="btn btn-ghost" id="notificationsBtn" type="button">Enable Notifications</button>
+        <span class="notification-status" id="notificationsStatus"></span>
+      </div>
       <span class="selection-count" id="selectionCount">0 selected</span>
     </div>
 

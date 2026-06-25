@@ -77,6 +77,63 @@
 
     .header-brand svg { width: 28px; height: 28px; }
 
+    .menu-toggle {
+      display: none;
+      width: 40px;
+      height: 40px;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: 1px solid var(--fg-4);
+      border-radius: 50%;
+      color: var(--fg-1);
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: border-color var(--t-base), background var(--t-base);
+    }
+
+    .menu-toggle:hover,
+    .menu-toggle:focus-visible {
+      border-color: var(--fg-1);
+      outline: none;
+    }
+
+    .menu-toggle-lines {
+      width: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .menu-toggle-lines span {
+      display: block;
+      height: 2px;
+      background: currentColor;
+      border-radius: var(--r-pill);
+      transition: transform var(--t-soft), opacity var(--t-soft);
+    }
+
+    .menu-toggle[aria-expanded="true"] .menu-toggle-lines span:nth-child(1) {
+      transform: translateY(6px) rotate(45deg);
+    }
+
+    .menu-toggle[aria-expanded="true"] .menu-toggle-lines span:nth-child(2) {
+      opacity: 0;
+    }
+
+    .menu-toggle[aria-expanded="true"] .menu-toggle-lines span:nth-child(3) {
+      transform: translateY(-6px) rotate(-45deg);
+    }
+
+    .header-menu {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      flex: 1;
+      min-width: 0;
+    }
+
     .header-filters {
       display: flex;
       align-items: center;
@@ -524,6 +581,89 @@
     }
 
     .btn-warning:hover { background: var(--warn-hover); }
+
+    @media (max-width: 900px) {
+      header {
+        padding: 14px 16px;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .header-brand {
+        font-size: 1rem;
+        min-width: 0;
+      }
+
+      .header-brand svg {
+        width: 26px;
+        height: 26px;
+      }
+
+      .menu-toggle {
+        display: inline-flex;
+        margin-left: auto;
+      }
+
+      .header-menu {
+        display: none;
+        width: 100%;
+        flex: 0 0 100%;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 14px;
+        padding-top: 12px;
+      }
+
+      header.menu-open .header-menu {
+        display: flex;
+      }
+
+      .header-filters {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+      }
+
+      .filter-tab {
+        width: 100%;
+        min-height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 14px;
+        font-size: 0.9rem;
+      }
+
+      .filter-tab .tab-count {
+        margin-left: 12px;
+      }
+
+      .header-right {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        font-size: 0.85rem;
+      }
+
+      .search-wrap,
+      #searchInput,
+      #searchInput:focus,
+      .btn-logout {
+        width: 100%;
+      }
+
+      #displayName {
+        color: var(--fg-2);
+        min-height: 1em;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      main {
+        padding: 28px 16px 120px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -535,21 +675,30 @@
       </svg>
       Song Sorter
     </div>
-    <div class="header-filters">
-      <button class="filter-tab active" data-filter="all">All <span class="tab-count" id="count-all"></span></button>
-      <button class="filter-tab" data-filter="unsorted">Unsorted <span class="tab-count" id="count-unsorted"></span></button>
-      <button class="filter-tab" data-filter="sorted">Sorted <span class="tab-count" id="count-sorted"></span></button>
-      <button class="filter-tab" data-filter="needs-resorting">Needs re-sorting <span class="tab-count" id="count-needs-resorting"></span></button>
-    </div>
-    <div class="header-right">
-      <div class="search-wrap">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-        </svg>
-        <input id="searchInput" type="search" placeholder="Search playlists…" />
+    <button class="menu-toggle" id="menuToggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="headerMenu">
+      <span class="menu-toggle-lines" aria-hidden="true">
+        <span></span>
+        <span></span>
+        <span></span>
+      </span>
+    </button>
+    <div class="header-menu" id="headerMenu">
+      <div class="header-filters">
+        <button class="filter-tab active" data-filter="all">All <span class="tab-count" id="count-all"></span></button>
+        <button class="filter-tab" data-filter="unsorted">Unsorted <span class="tab-count" id="count-unsorted"></span></button>
+        <button class="filter-tab" data-filter="sorted">Sorted <span class="tab-count" id="count-sorted"></span></button>
+        <button class="filter-tab" data-filter="needs-resorting">Needs re-sorting <span class="tab-count" id="count-needs-resorting"></span></button>
       </div>
-      <span id="displayName"></span>
-      <button class="btn-logout" id="logoutBtn">Log out</button>
+      <div class="header-right">
+        <div class="search-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input id="searchInput" type="search" placeholder="Search playlists…" />
+        </div>
+        <span id="displayName"></span>
+        <button class="btn-logout" id="logoutBtn">Log out</button>
+      </div>
     </div>
   </header>
 

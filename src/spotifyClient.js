@@ -2,23 +2,55 @@ const axios = require('axios');
 
 const BASE_URL = 'https://api.spotify.com/v1';
 
+class AuthenticationExpiredError extends Error {
+  constructor(message = 'Authentication expired', cause) {
+    super(message);
+    this.name = 'AuthenticationExpiredError';
+    this.code = 'authentication_expired';
+    this.cause = cause;
+  }
+}
+
+function isRefreshAuthFailure(err) {
+  const status = err.response?.status;
+  const tokenError = err.response?.data?.error;
+  return status === 401 ||
+    (status === 400 && ['invalid_grant', 'invalid_client'].includes(tokenError));
+}
+
+function isAuthenticationExpiredError(err) {
+  return err?.code === 'authentication_expired' || err instanceof AuthenticationExpiredError;
+}
+
 // Refresh the access token and update the session in place
 async function refreshAccessToken(session) {
-  const res = await axios.post(
-    'https://accounts.spotify.com/api/token',
-    new URLSearchParams({
-      grant_type: 'refresh_token',
-      refresh_token: session.refreshToken,
-    }),
-    {
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        Authorization: 'Basic ' + Buffer.from(
-          `${process.env.SPOTIFY_CLIENT_ID}:${process.env.SPOTIFY_CLIENT_SECRET}`
-        ).toString('base64'),
-      },
+  if (!session.refreshToken) {
+    throw new AuthenticationExpiredError();
+  }
+
+  let res;
+  try {
+    res = await axios.post(
+      'https://accounts.spotify.com/api/token',
+      new URLSearchParams({
+        grant_type: 'refresh_token',
+        refresh_token: session.refreshToken,
+      }),
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          Authorization: 'Basic ' + Buffer.from(
+            `${process.env.SPOTIFY_CLIENT_ID}:${process.env.SPOTIFY_CLIENT_SECRET}`
+          ).toString('base64'),
+        },
+      }
+    );
+  } catch (err) {
+    if (isRefreshAuthFailure(err)) {
+      throw new AuthenticationExpiredError('Authentication expired', err);
     }
-  );
+    throw err;
+  }
 
   session.accessToken = res.data.access_token;
   if (res.data.refresh_token) {
@@ -68,8 +100,15 @@ async function spotifyRequest(session, method, path, data = null, params = {}) {
     if (err.response?.status === 401) {
       await refreshAccessToken(session);
       config.headers.Authorization = `Bearer ${session.accessToken}`;
-      const res = await request(config);
-      return res.data;
+      try {
+        const res = await request(config);
+        return res.data;
+      } catch (retryErr) {
+        if (retryErr.response?.status === 401) {
+          throw new AuthenticationExpiredError('Authentication expired', retryErr);
+        }
+        throw retryErr;
+      }
     }
     throw err;
   }
@@ -142,4 +181,11 @@ async function reorderTrack(session, playlistId, rangeStart, insertBefore, snaps
   return data.snapshot_id;
 }
 
-module.exports = { ensureFreshToken, getPlaylists, getPlaylistTracks, reorderTrack };
+module.exports = {
+  ensureFreshToken,
+  getPlaylists,
+  getPlaylistTracks,
+  reorderTrack,
+  AuthenticationExpiredError,
+  isAuthenticationExpiredError,
+};

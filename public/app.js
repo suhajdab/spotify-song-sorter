@@ -37,6 +37,10 @@ function saveSnapshot(id, snapshotId) {
   await loadPlaylists();
 })();
 
+function redirectToLogin() {
+  window.location.replace('/auth/logout');
+}
+
 function bindControls() {
   document.querySelectorAll('.filter-tab').forEach(tab => {
     tab.addEventListener('click', () => setFilter(tab.dataset.filter));
@@ -62,6 +66,10 @@ async function loadPlaylists() {
 
   try {
     const playlistRes = await fetch('/api/playlists');
+    if (playlistRes.status === 401) {
+      redirectToLogin();
+      return;
+    }
     if (playlistRes.status === 429) {
       const { retryAfter } = await playlistRes.json();
       const hint = retryAfter !== '?' ? ` Try again in ${formatDuration(retryAfter)}.` : ' Try again shortly.';
@@ -273,6 +281,11 @@ async function sortOnePlaylist(id) {
 async function sortViaFetch(id) {
   const res = await fetch(`/api/playlists/${id}/sort`, { method: 'POST' });
 
+  if (res.status === 401) {
+    redirectToLogin();
+    return;
+  }
+
   if (!res.ok) {
     setStatus(id, 'Request failed', null, '❌');
     return;
@@ -333,6 +346,10 @@ function handleSSEEvent(id, event) {
     case 'error':
       setStatus(id, `Error: ${escHtml(event.message)}`);
       setIcon(id, 'error');
+      break;
+
+    case 'auth_expired':
+      redirectToLogin();
       break;
 
     case 'done':
